@@ -1,10 +1,20 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Optional
+import html
 
 class RatingBase(BaseModel):
-    rating: int
-    review: Optional[str] = None
+    rating: int = Field(..., ge=1, le=5)
+    review: Optional[str] = Field(None, max_length=2000)
+
+    @validator('review')
+    def sanitize_review(cls, v):
+        """Sanitize review text"""
+        if v is None:
+            return v
+        # Remove excessive whitespace and sanitize HTML
+        v = ' '.join(v.split())
+        return html.escape(v)
 
 class RatingCreate(RatingBase):
     pass
