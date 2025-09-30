@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / compiled files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+.venv312/
+
+# Editor-specific files
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+temp/
+
+# Configuration files with sensitive data (e.g., API keys, database credentials)
+.env
+*.env
+config.ini
+config.json
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Test-related files
+.pytest_cache/
+
+# Docker-related files (if applicable)
+*.dockerignore
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
