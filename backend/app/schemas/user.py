@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
 from typing import Optional
 import re
@@ -7,7 +7,7 @@ class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]+$")
     email: EmailStr
 
-    @validator('username')
+    @field_validator('username')
     def username_alphanumeric(cls, v):
         if not re.match("^[a-zA-Z0-9_]+$", v):
             raise ValueError('Username must be alphanumeric and can contain underscores')
@@ -16,7 +16,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=100)
 
-    @validator('password')
+    @field_validator('password')
     def password_strength(cls, v):
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')

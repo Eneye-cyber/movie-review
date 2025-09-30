@@ -23,7 +23,7 @@ def create_or_update_rating(db: Session, rating: RatingCreate, movie_id: int, us
         return existing_rating
     else:
         # Create new rating
-        db_rating = Rating(**rating.dict(), movie_id=movie_id, user_id=user_id)
+        db_rating = Rating(**rating.model_dump(), movie_id=movie_id, user_id=user_id)
         db.add(db_rating)
         db.commit()
         db.refresh(db_rating)

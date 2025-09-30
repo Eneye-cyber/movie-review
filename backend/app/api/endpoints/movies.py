@@ -110,11 +110,11 @@ def add_rating(
         )
     
     # Prevent self-rating if user created the movie (optional business rule)
-    if movie.created_by == current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot rate your own movie"
-        )
+    # if movie.created_by == current_user.id:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="You cannot rate your own movie"
+    #     )
     
     # Create or update rating
     new_rating = create_or_update_rating(

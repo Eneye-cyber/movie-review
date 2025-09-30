@@ -45,7 +45,7 @@ def get_movie_by_id(db: Session, movie_id: int):
     return db.query(Movie).filter(Movie.id == movie_id).first()
 
 def create_movie(db: Session, movie: MovieCreate, user_id: int):
-    db_movie = Movie(**movie.dict(), created_by=user_id)
+    db_movie = Movie(**movie.model_dump(), created_by=user_id)
     db.add(db_movie)
     db.commit()
     db.refresh(db_movie)
