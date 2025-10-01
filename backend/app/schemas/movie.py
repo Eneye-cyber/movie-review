@@ -24,7 +24,7 @@ class MovieBase(BaseModel):
             'action', 'adventure', 'animation', 'comedy', 'crime', 'documentary',
             'drama', 'fantasy', 'historical', 'horror', 'mystery', 'romance',
             'sci-fi', 'thriller', 'western', 'biography', 'musical', 'family',
-            'war', 'sports', 'superhero', 'noir'
+            'war', 'sports', 'superhero', 'noir', "Action",
         ]
         
         # Allow custom genres but validate format
