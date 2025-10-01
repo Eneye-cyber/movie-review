@@ -3,9 +3,15 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app.database import engine
+from app.database import engine, Base
 from app.models import user, movie, rating
 from app.api.endpoints import auth, movies, ratings
+
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Create tables
 user.Base.metadata.create_all(bind=engine)
@@ -56,6 +62,10 @@ app.include_router(ratings.router)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Movie Rating Platform"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "database": "postgresql" if os.getenv("USE_SQLITE", "false").lower() == "false" else "sqlite"}
 
 if __name__ == "__main__":
     import uvicorn
