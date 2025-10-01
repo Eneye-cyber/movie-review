@@ -13,17 +13,17 @@ export function MovieCard({ movie }: MovieCardProps) {
     <Link href={`/movies/${movie.id}`}>
       <Card className="overflow-hidden hover:border-primary/50 transition-colors h-full group">
         <div className="aspect-[2/3] bg-muted relative overflow-hidden">
-          {movie.posterUrl ? (
+          {/* {movie.posterUrl ? (
             <img
-              src={movie.posterUrl || "/placeholder.svg"}
+              src={"/placeholder.svg"} // no image yet
               alt={movie.title}
               className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
             />
-          ) : (
+          ) : ( */}
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <span className="text-4xl">🎬</span>
             </div>
-          )}
+          {/* )} */}
         </div>
         <CardContent className="p-4 space-y-2">
           <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
@@ -32,16 +32,16 @@ export function MovieCard({ movie }: MovieCardProps) {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              <span>{movie.releaseYear}</span>
+              <span>{movie.release_year}</span>
             </div>
             <span className="px-2 py-0.5 bg-secondary rounded text-xs">{movie.genre}</span>
           </div>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex items-center justify-between">
-          <StarRating rating={movie.averageRating} size="sm" showValue />
+          <StarRating rating={movie.ratings_avg} size="sm" showValue />
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Users className="h-3 w-3" />
-            <span>{movie.ratingCount}</span>
+            <span>{movie.ratings_count}</span>
           </div>
         </CardFooter>
       </Card>

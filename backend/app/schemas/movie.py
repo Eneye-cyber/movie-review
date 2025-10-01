@@ -63,3 +63,4 @@ class MovieListResponse(BaseModel):
     total: int
     page: int
     limit: int
+    total_pages: int

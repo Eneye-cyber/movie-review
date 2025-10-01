@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from app.database import engine, Base
@@ -9,6 +10,8 @@ from app.api.endpoints import auth, movies, ratings
 
 import os
 from dotenv import load_dotenv
+
+
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +26,22 @@ app = FastAPI(
     description="A platform for users to add and rate movies",
     version="1.0.0"
 )
+
+# Define allowed origins (your frontend URL)
+origins = [
+    "http://localhost:3000",   # Next.js dev server
+    "http://127.0.0.1:3000",   # Alternative localhost
+    "https://your-frontend.com" # Production domain
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,           # List of allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],             # Allow all HTTP methods
+    allow_headers=["*"],             # Allow all headers
+)
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     """Custom validation error handler"""

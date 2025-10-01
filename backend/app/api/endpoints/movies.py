@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from sqlalchemy.orm import Session
 import re
+import math
 
 from app.database import get_db
 from app.schemas.movie import MovieCreate, MovieResponse, MovieListResponse
@@ -71,11 +72,13 @@ def list_movies(
         max_year=max_year,
         search=sanitized_search
     )
+    total_pages = math.ceil(result["total"] / result["limit"]) if result["limit"] else 1
     return MovieListResponse(
         movies=result["movies"],
         total=result["total"],
         page=result["page"],
-        limit=result["limit"]
+        limit=result["limit"],
+        total_pages=total_pages
     )
 
 @router.get("/{movie_id}", response_model=MovieResponse)

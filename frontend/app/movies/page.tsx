@@ -6,8 +6,9 @@ import { Header } from "@/components/header"
 import { MovieCard } from "@/components/movie-card"
 import { MovieFilters } from "@/components/movie-filters"
 import { Pagination } from "@/components/pagination"
-import type { Movie, PaginatedResponse } from "@/lib/types"
+import type { Movie, MoviesPaginatedResponse, PaginatedResponse } from "@/lib/types"
 import { Loader2 } from "lucide-react"
+import { apiFetch } from "@/lib/utils"
 
 export default function MoviesPage() {
   const searchParams = useSearchParams()
@@ -24,8 +25,8 @@ export default function MoviesPage() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "")
   const [genre, setGenre] = useState(searchParams.get("genre") || "All Genres")
-  const [yearFrom, setYearFrom] = useState(searchParams.get("yearFrom") || "")
-  const [yearTo, setYearTo] = useState(searchParams.get("yearTo") || "")
+  const [yearFrom, setYearFrom] = useState(searchParams.get("min_year") || "")
+  const [yearTo, setYearTo] = useState(searchParams.get("max_year") || "")
 
   const currentPage = Number.parseInt(searchParams.get("page") || "1")
 
@@ -44,25 +45,22 @@ export default function MoviesPage() {
     try {
       const params = new URLSearchParams({
         page: String(page),
-        pageSize: "12",
+        limit: "12",
       })
 
       if (searchQuery) params.append("search", searchQuery)
       if (genre && genre !== "All Genres") params.append("genre", genre)
-      if (yearFrom) params.append("yearFrom", yearFrom)
-      if (yearTo) params.append("yearTo", yearTo)
+      if (yearFrom) params.append("min_year", yearFrom)
+      if (yearTo) params.append("max_year", yearTo)
 
-      const response = await fetch(`/api/movies?${params.toString()}`)
+      const response = await apiFetch(`/movies?${params.toString()}`)
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch movies")
-      }
-
-      const data: PaginatedResponse<Movie> = await response.json()
-      setMovies(data.data)
+      const data: MoviesPaginatedResponse = response
+      console.log('data', data)
+      setMovies(data.movies)
       setPagination({
         page: data.page,
-        totalPages: data.totalPages,
+        totalPages: data.total_pages ?? 3,
         total: data.total,
       })
 
@@ -80,8 +78,8 @@ export default function MoviesPage() {
     if (page > 1) params.append("page", String(page))
     if (searchQuery) params.append("search", searchQuery)
     if (genre && genre !== "All Genres") params.append("genre", genre)
-    if (yearFrom) params.append("yearFrom", yearFrom)
-    if (yearTo) params.append("yearTo", yearTo)
+    if (yearFrom) params.append("min_year", yearFrom)
+    if (yearTo) params.append("max_year", yearTo)
 
     const queryString = params.toString()
     router.push(`/movies${queryString ? `?${queryString}` : ""}`, { scroll: false })
