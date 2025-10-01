@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { apiFetch } from "./utils";
 
 interface User {
@@ -13,49 +13,67 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<{success: boolean;
-    error?: any;}>;
+  register: (
+    username: string,
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: any }>;
   logout: () => void;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
+const EXPIRY_KEY = "token_expiry";
+const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const logoutTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Check for existing token on mount
+  // Restore session on mount
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // Validate token and get user data
-      fetchUserData(token);
-    } else {
-      setIsLoading(false);
+    const token = localStorage.getItem(TOKEN_KEY);
+    const expiry = localStorage.getItem(EXPIRY_KEY);
+    const userData = localStorage.getItem(USER_KEY);
+
+    if (token && expiry && userData) {
+      const now = Date.now();
+      const expiryTime = parseInt(expiry);
+
+      if (now < expiryTime) {
+        const parsedUser: User = JSON.parse(userData);
+        setUser(parsedUser);
+
+        // Schedule auto-logout
+        scheduleAutoLogout(expiryTime - now);
+      } else {
+        logout();
+      }
     }
+    setIsLoading(false);
   }, []);
 
-  const fetchUserData = async (token: string) => {
-    try {
-      const response = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  const scheduleAutoLogout = (delay: number) => {
+    if (logoutTimer.current) clearTimeout(logoutTimer.current);
+    logoutTimer.current = setTimeout(() => {
+      logout();
+      alert("Your session has expired. Please log in again.");
+    }, delay);
+  };
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      } else {
-        localStorage.removeItem("token");
-      }
-    } catch (error) {
-      console.error("[Logger] Error fetching user data:", error);
-      localStorage.removeItem("token");
-    } finally {
-      setIsLoading(false);
-    }
+  const persistSession = (token: string, userData: User) => {
+    const expiry = Date.now() + SESSION_DURATION;
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    localStorage.setItem(EXPIRY_KEY, expiry.toString());
+    setUser(userData);
+
+    // Schedule auto-logout in 30 minutes
+    scheduleAutoLogout(SESSION_DURATION);
   };
 
   const login = async (email: string, password: string) => {
@@ -66,8 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
       const { access_token, user: userData } = response;
-      localStorage.setItem("token", access_token);
-      setUser(userData);
+      persistSession(access_token, userData);
     } catch (error) {
       console.error("[Logger] Error logging in:", error);
       alert((error as Error).message ?? "Login failed");
@@ -81,19 +98,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
       });
-      if (!response) throw new Error("Registration failes");
+      if (!response) throw new Error("Registration failed");
       const { access_token, user: userData } = response;
-      localStorage.setItem("token", access_token);
-      setUser(userData);
-      return {success: true}
+      persistSession(access_token, userData);
+      return { success: true };
     } catch (error: any) {
-      return {success: false, error: error?.body}
+      return { success: false, error: error?.body };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(EXPIRY_KEY);
     setUser(null);
+
+    if (logoutTimer.current) {
+      clearTimeout(logoutTimer.current);
+      logoutTimer.current = null;
+    }
   };
 
   return (
