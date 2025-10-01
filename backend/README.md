@@ -132,7 +132,7 @@ After seeding, use these test accounts:
 ## Project Structure
 
 ```
-movie_rating_platform/
+backend/
 ├── app/
 │   ├── models/          # SQLAlchemy models
 │   ├── schemas/         # Pydantic schemas
