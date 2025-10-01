@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Film } from "lucide-react"
+import { extractErrorMessages } from "@/lib/utils"
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("")
@@ -22,26 +23,6 @@ export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const extractErrorMessages = (err: any): string[] => {
-    // Case 1: detail string + errors[]
-    if (err?.detail && Array.isArray(err.errors)) {
-      return err.errors.map((e: any) => `${e.field}: ${e.message}`)
-    }
-
-    // Case 2: Pydantic-style errors
-    if (Array.isArray(err?.detail)) {
-      return err.detail.map(
-        (e: any) => `${Array.isArray(e.loc) ? e.loc.join(".") : e.loc}: ${e.msg}`
-      )
-    }
-
-    // Case 3: simple detail string
-    if (typeof err?.detail === "string") {
-      return [err.detail]
-    }
-
-    return ["An unknown error occurred"]
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

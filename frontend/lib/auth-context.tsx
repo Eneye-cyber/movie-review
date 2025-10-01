@@ -65,11 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const { token, user: userData } = response;
-      localStorage.setItem("token", token);
+      const { access_token, user: userData } = response;
+      localStorage.setItem("token", access_token);
       setUser(userData);
     } catch (error) {
       console.error("[Logger] Error logging in:", error);
+      alert((error as Error).message ?? "Login failed");
     }
   };
 
@@ -81,12 +82,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ username, email, password }),
       });
       if (!response) throw new Error("Registration failes");
-      const { token, user: userData } = response;
-      localStorage.setItem("token", token);
+      const { access_token, user: userData } = response;
+      localStorage.setItem("token", access_token);
       setUser(userData);
       return {success: true}
     } catch (error: any) {
-      alert((error as Error).message);
       return {success: false, error: error?.body}
     }
   };

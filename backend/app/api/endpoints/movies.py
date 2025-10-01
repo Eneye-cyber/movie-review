@@ -124,13 +124,22 @@ def add_rating(
         db=db,
         rating=rating,
         movie_id=movie_id,
-        user_id=current_user.id
+        user_id=current_user.id,
     )
     
     # Update movie rating statistics
     update_movie_ratings_stats(db, movie_id)
     
-    return new_rating
+    return {
+        "id": new_rating.id,
+        "movie_id": new_rating.movie_id,
+        "user_id": new_rating.user_id,
+        "rating": new_rating.rating,
+        "review": new_rating.review,
+        "created_at": new_rating.created_at,
+        "updated_at": new_rating.updated_at,
+        "username": current_user.username,  # ✅ add username
+    }
 
 @router.get("/{movie_id}/ratings", response_model=RatingListResponse)
 def get_movie_ratings(

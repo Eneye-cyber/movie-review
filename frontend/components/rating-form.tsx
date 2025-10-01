@@ -1,75 +1,85 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { StarRating } from "@/components/star-rating"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { StarRating } from "@/components/star-rating";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+import { apiFetch, extractErrorMessages } from "@/lib/utils";
 
 interface RatingFormProps {
-  movieId: string
+  movieId: string;
   existingRating?: {
-    rating: number
-    review?: string
-  }
-  onSuccess: () => void
+    rating: number;
+    review?: string;
+  };
+  onSuccess: () => void;
 }
 
 export function RatingForm({ movieId, existingRating, onSuccess }: RatingFormProps) {
-  const [rating, setRating] = useState(existingRating?.rating || 0)
-  const [review, setReview] = useState(existingRating?.review || "")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
+  const [rating, setRating] = useState(existingRating?.rating || 0);
+  const [review, setReview] = useState(existingRating?.review || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (rating === 0) {
       toast({
         title: "Rating required",
         description: "Please select a star rating",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`/api/movies/${movieId}/ratings`, {
+      const token = localStorage.getItem("token");
+      const response = await apiFetch(`/movies/${movieId}/ratings`, {
         method: existingRating ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ rating, review }),
-      })
+      });
+      if (response.rating)
+        toast({
+          title: existingRating ? "Rating updated" : "Rating submitted",
+          description: "Thank you for your feedback!",
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to submit rating")
+      onSuccess();
+    } catch (error: any) {
+      const err = error?.body;
+      if (err) {
+        const messages = extractErrorMessages(err);
+        messages.forEach((msg) =>
+          toast({
+            title: "Review failed",
+            description: msg,
+            variant: "destructive",
+          })
+        )
+      } else {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to submit rating",
+          variant: "destructive",
+        });
+
       }
-
-      toast({
-        title: existingRating ? "Rating updated" : "Rating submitted",
-        description: "Thank you for your feedback!",
-      })
-
-      onSuccess()
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit rating",
-        variant: "destructive",
-      })
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -95,5 +105,5 @@ export function RatingForm({ movieId, existingRating, onSuccess }: RatingFormPro
         {existingRating ? "Update Rating" : "Submit Rating"}
       </Button>
     </form>
-  )
+  );
 }
