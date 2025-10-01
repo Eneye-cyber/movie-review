@@ -1,8 +1,9 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from app.models.rating import Rating
 from app.models.movie import Movie
 from app.schemas.rating import RatingCreate
+
 
 def get_rating_by_user_and_movie(db: Session, user_id: int, movie_id: int):
     return db.query(Rating).filter(
@@ -30,12 +31,24 @@ def create_or_update_rating(db: Session, rating: RatingCreate, movie_id: int, us
         return db_rating
 
 def get_ratings_by_movie(db: Session, movie_id: int, skip: int = 0, limit: int = 100):
-    query = db.query(Rating).filter(Rating.movie_id == movie_id)
+    query = db.query(Rating).options(joinedload(Rating.user)).filter(Rating.movie_id == movie_id)
     total = query.count()
     ratings = query.offset(skip).limit(limit).all()
     
     return {
-        "ratings": ratings,
+        "ratings": [
+            {
+                "id": r.id,
+                "movie_id": r.movie_id,
+                "user_id": r.user_id,
+                "username": r.user.username,  # 👈 add username here
+                "rating": r.rating,
+                "review": r.review,
+                "created_at": r.created_at,
+                "updated_at": r.updated_at,
+            }
+            for r in ratings
+        ],
         "total": total,
         "page": skip // limit + 1 if limit > 0 else 1,
         "limit": limit

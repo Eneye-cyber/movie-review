@@ -25,6 +25,7 @@ class RatingResponse(RatingBase):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime]
+    username: str
 
     class Config:
         from_attributes = True
@@ -34,3 +35,4 @@ class RatingListResponse(BaseModel):
     total: int
     page: int
     limit: int
+    total_pages: int

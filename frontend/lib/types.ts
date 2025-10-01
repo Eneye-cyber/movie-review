@@ -10,13 +10,14 @@ export interface Movie {
   ratings_avg: number
 }
 export interface Rating {
-  id: string
-  movieId: string
-  userId: string
-  userName: string
+  id: number
+  movie_id: number
+  user_id: number
   rating: number
-  review?: string
-  createdAt: string
+  review: string
+  created_at: string // ISO timestamp
+  updated_at: string // ISO timestamp
+  username: string
 }
 
 export interface PaginatedResponse<T> {
@@ -29,4 +30,8 @@ export interface PaginatedResponse<T> {
 
 export type MoviesPaginatedResponse = Omit<PaginatedResponse<Movie>, "data"> & {
   movies: Movie[]
+}
+
+export type RatingsPaginatedResponse = Omit<PaginatedResponse<Rating>, "data"> & {
+  ratings: Rating[]
 }

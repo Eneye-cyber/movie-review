@@ -9,9 +9,10 @@ import { RatingList } from "@/components/rating-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
-import type { Movie, Rating } from "@/lib/types"
+import type { Movie, Rating, RatingsPaginatedResponse } from "@/lib/types"
 import { ArrowLeft, Calendar, Loader2, Users } from "lucide-react"
 import Link from "next/link"
+import { apiFetch } from "@/lib/utils"
 
 export default function MovieDetailPage() {
   const params = useParams()
@@ -33,25 +34,20 @@ export default function MovieDetailPage() {
 
     try {
       // Fetch movie details
-      const movieResponse = await fetch(`/api/movies/${params.id}`)
-      if (!movieResponse.ok) {
-        throw new Error("Movie not found")
-      }
-      const movieData = await movieResponse.json()
+      const movieResponse = await apiFetch(`/movies/${params.id}`)
+      const movieData = movieResponse
       setMovie(movieData)
 
       // Fetch ratings
-      const ratingsResponse = await fetch(`/api/movies/${params.id}/ratings`)
-      if (ratingsResponse.ok) {
-        const ratingsData = await ratingsResponse.json()
-        setRatings(ratingsData)
+      const ratingsResponse = await apiFetch(`/movies/${params.id}/ratings`)
+      const data: RatingsPaginatedResponse = ratingsResponse;
+        setRatings(data.ratings)
 
         // Find user's rating if logged in
         if (user) {
-          const userRatingData = ratingsData.find((r: Rating) => r.userId === user.id)
+          const userRatingData = data.ratings.find((r: Rating) => `${r.user_id}` === user.id)
           setUserRating(userRatingData || null)
         }
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -103,37 +99,37 @@ export default function MovieDetailPage() {
           <div className="lg:col-span-1">
             <div className="sticky top-24">
               <div className="aspect-[2/3] bg-muted rounded-lg overflow-hidden mb-4">
-                {movie.posterUrl ? (
+                {/* {movie.posterUrl ? (
                   <img
                     src={movie.posterUrl || "/placeholder.svg"}
                     alt={movie.title}
                     className="object-cover w-full h-full"
                   />
-                ) : (
+                ) : ( */}
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     <span className="text-6xl">🎬</span>
                   </div>
-                )}
+                {/* )} */}
               </div>
 
               <Card>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Average Rating</span>
-                    <StarRating rating={movie.averageRating} size="sm" showValue />
+                    <StarRating rating={movie.ratings_avg} size="sm" showValue />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Total Ratings</span>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">{movie.ratingCount}</span>
+                      <span className="text-sm font-medium">{movie.ratings_count}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Release Year</span>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">{movie.releaseYear}</span>
+                      <span className="text-sm font-medium">{movie.release_year}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
@@ -160,7 +156,7 @@ export default function MovieDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <RatingForm
-                    movieId={movie.id}
+                    movieId={`${movie.id}`}
                     existingRating={
                       userRating
                         ? {

@@ -152,11 +152,15 @@ def get_movie_ratings(
     
     skip = (page - 1) * limit
     result = get_ratings_by_movie(db, movie_id=movie_id, skip=skip, limit=limit)
+    total_pages = math.ceil(result["total"] / result["limit"]) if result["limit"] else 1
+
     return RatingListResponse(
         ratings=result["ratings"],
         total=result["total"],
         page=result["page"],
-        limit=result["limit"]
+        limit=result["limit"],
+        total_pages=total_pages
+
     )
 
 @router.delete("/{movie_id}")

@@ -27,9 +27,9 @@ export function RatingList({ ratings }: RatingListProps) {
                   <User className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">{rating.userName}</p>
+                  <p className="font-medium text-sm">{rating.username}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(rating.createdAt).toLocaleDateString("en-US", {
+                    {new Date(rating.created_at).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
