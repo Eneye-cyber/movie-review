@@ -1,38 +1,40 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import type React from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { apiFetch } from "./utils";
 
 interface User {
-  id: string
-  email: string
-  name: string
+  id: string;
+  email: string;
+  username: string;
 }
 
 interface AuthContextType {
-  user: User | null
-  login: (email: string, password: string) => Promise<void>
-  register: (name: string, email: string, password: string) => Promise<void>
-  logout: () => void
-  isLoading: boolean
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<{success: boolean;
+    error?: any;}>;
+  logout: () => void;
+  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Check for existing token on mount
   useEffect(() => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("token");
     if (token) {
       // Validate token and get user data
-      fetchUserData(token)
+      fetchUserData(token);
     } else {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [])
+  }, []);
 
   const fetchUserData = async (token: string) => {
     try {
@@ -40,68 +42,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      })
+      });
 
       if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
+        const userData = await response.json();
+        setUser(userData);
       } else {
-        localStorage.removeItem("token")
+        localStorage.removeItem("token");
       }
     } catch (error) {
-      console.error("[Logger] Error fetching user data:", error)
-      localStorage.removeItem("token")
+      console.error("[Logger] Error fetching user data:", error);
+      localStorage.removeItem("token");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || "Login failed")
+    try {
+      const response = await apiFetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const { token, user: userData } = response;
+      localStorage.setItem("token", token);
+      setUser(userData);
+    } catch (error) {
+      console.error("[Logger] Error logging in:", error);
     }
+  };
 
-    const { token, user: userData } = await response.json()
-    localStorage.setItem("token", token)
-    setUser(userData)
-  }
-
-  const register = async (name: string, email: string, password: string) => {
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || "Registration failed")
+  const register = async (username: string, email: string, password: string) => {
+    try {
+      const response = await apiFetch("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password }),
+      });
+      if (!response) throw new Error("Registration failes");
+      const { token, user: userData } = response;
+      localStorage.setItem("token", token);
+      setUser(userData);
+      return {success: true}
+    } catch (error: any) {
+      alert((error as Error).message);
+      return {success: false, error: error?.body}
     }
-
-    const { token, user: userData } = await response.json()
-    localStorage.setItem("token", token)
-    setUser(userData)
-  }
+  };
 
   const logout = () => {
-    localStorage.removeItem("token")
-    setUser(null)
-  }
+    localStorage.removeItem("token");
+    setUser(null);
+  };
 
-  return <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

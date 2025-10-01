@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -14,7 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Film } from "lucide-react"
 
 export default function RegisterPage() {
-  const [name, setName] = useState("")
+  const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -22,6 +21,27 @@ export default function RegisterPage() {
   const { register } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+
+  const extractErrorMessages = (err: any): string[] => {
+    // Case 1: detail string + errors[]
+    if (err?.detail && Array.isArray(err.errors)) {
+      return err.errors.map((e: any) => `${e.field}: ${e.message}`)
+    }
+
+    // Case 2: Pydantic-style errors
+    if (Array.isArray(err?.detail)) {
+      return err.detail.map(
+        (e: any) => `${Array.isArray(e.loc) ? e.loc.join(".") : e.loc}: ${e.msg}`
+      )
+    }
+
+    // Case 3: simple detail string
+    if (typeof err?.detail === "string") {
+      return [err.detail]
+    }
+
+    return ["An unknown error occurred"]
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,7 +58,20 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      await register(name, email, password)
+      const registration = await register(username, email, password)
+
+      if (registration.error) {
+        const messages = extractErrorMessages(registration.error)
+        messages.forEach((msg) =>
+          toast({
+            title: "Registration failed",
+            description: msg,
+            variant: "destructive",
+          })
+        )
+        return
+      }
+
       toast({
         title: "Account created!",
         description: "Welcome to MovieRate.",
@@ -47,7 +80,8 @@ export default function RegisterPage() {
     } catch (error) {
       toast({
         title: "Registration failed",
-        description: error instanceof Error ? error.message : "Could not create account",
+        description:
+          error instanceof Error ? error.message : "Could not create account",
         variant: "destructive",
       })
     } finally {
@@ -69,14 +103,16 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="name"
+                id="username"
+                name="username"
                 type="text"
                 placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
+                autoComplete="new-username"
                 disabled={isLoading}
               />
             </div>
@@ -85,9 +121,11 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
+                name="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
                 disabled={isLoading}
               />
@@ -100,6 +138,7 @@ export default function RegisterPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 required
                 disabled={isLoading}
                 minLength={6}

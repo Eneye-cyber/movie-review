@@ -5,7 +5,7 @@ from datetime import timedelta
 import re
 
 from app.database import get_db
-from app.schemas.user import UserCreate, UserResponse, Token
+from app.schemas.user import UserCreate, UserResponse, Token, LoginRequest
 from app.crud.user import create_user, authenticate_user, get_user_by_username, get_user_by_email
 from app.auth.jwt import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
@@ -16,10 +16,10 @@ def validate_email_format(email: str) -> bool:
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=Token)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     """
-    Register a new user with comprehensive validation
+    Register a new user, then return JWT + user (same as login).
     """
     # Additional server-side email validation
     if not validate_email_format(user.email):
@@ -52,31 +52,40 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Password is too common. Please choose a stronger password."
         )
     
-    return create_user(db=db, user=user)
+    # Create the new user
+    new_user = create_user(db=db, user=user)
+
+    # Issue token (same as login)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": new_user.username}, expires_delta=access_token_expires
+    )
+
+    return {"access_token": access_token, "token_type": "bearer", "user": new_user}
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(form_data: LoginRequest, db: Session = Depends(get_db)):
     """
     Authenticate user and return JWT token
     """
     # Basic input validation
-    if not form_data.username or not form_data.password:
+    if not form_data.email or not form_data.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username and password are required"
         )
     
-    if len(form_data.username) < 3 or len(form_data.password) < 1:
+    if len(form_data.email) < 3 or len(form_data.password) < 1:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid credentials"
         )
     
-    user = authenticate_user(db, form_data.username, form_data.password)
+    user = authenticate_user(db, form_data.email, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -85,4 +94,4 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user": user}

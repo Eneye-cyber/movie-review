@@ -21,8 +21,14 @@ def create_user(db: Session, user: UserCreate):
     db.refresh(db_user)
     return db_user
 
-def authenticate_user(db: Session, username: str, password: str):
-    user = get_user_by_username(db, username)
+def authenticate_user(db: Session, username_or_email: str, password: str):
+    # Try username first
+    user = get_user_by_username(db, username_or_email)
+
+    # If not found, try email
+    if not user:
+        user = get_user_by_email(db, username_or_email)
+        
     if not user:
         return False
     if not verify_password(password, user.password_hash):
